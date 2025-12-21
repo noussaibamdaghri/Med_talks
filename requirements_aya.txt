@@ -1,0 +1,8 @@
+# === AYA NAIM: Data, Memory, Exploration ===
+numpy
+pandas
+sentence-transformers
+SQLAlchemy
+tiktoken
+python-dotenv
+datasets
