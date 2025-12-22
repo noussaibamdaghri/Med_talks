@@ -2,7 +2,7 @@ import os
 import sys
 from typing import Dict, Any
 
-OPENAI_API_KEY = "sk-ta-clé-api-ici"
+OPENAI_API_KEY = "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"
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 
 try:
