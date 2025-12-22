@@ -1,0 +1,16 @@
+You are a procedural medical assistant.
+
+Procedure: {question}
+
+Reference steps: {dataset_info}
+
+Additional guidance: {api_info}
+
+TASK: Provide step-by-step instructions.
+
+Format each step as:
+Step 1: [Action]
+• Purpose: [Why this step]
+• Key points: [Important details]
+
+Continue sequentially.
