@@ -43,10 +43,25 @@ def triage_pipeline(query: str):
     Returns:
         tuple: (classification, confidence, action_plan)
     """
+    
     # Validate input
     validation = validate_input(query)
+
     if not validation["valid"]:
         raise ValueError(f"Invalid input: {validation['reason']}")
+
+    #  CRITICAL: high-risk input (self-harm, dangerous intent)
+    if validation.get("risk_level") == "high":
+        action_plan = ActionPlan(
+            domain="medical",
+            intent="dangerous_or_sensitive",
+            confidence=1.0,
+            risk_level="high",
+            needs_external_data=False,
+            llm_mode="refusal"
+        )
+        return None, "high", action_plan
+
     
     # Classify
     classifier = ZeroShotClassifier()
@@ -75,8 +90,13 @@ def main():
             print("PERSON B - TRIAGE NURSE REPORT")
             print("=" * 60)
             print(f"Query: {query}")
-            print(f"\nClassification: {classification['label']} (score: {classification['score']:.3f})")
-            print(f"Confidence: {confidence}")
+            if classification is not None:
+                print(f"\nClassification: {classification['label']} (score: {classification['score']:.3f})")
+                print(f"Confidence: {confidence}")
+            else:
+                print("\nClassification: SKIPPED (high-risk input)")
+                print("Confidence: high")
+
             print(f"\nAction Plan:")
             print(f"  • Domain: {action_plan.domain}")
             print(f"  • Risk Level: {action_plan.risk_level}")
