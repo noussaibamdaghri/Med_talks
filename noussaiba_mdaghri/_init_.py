@@ -4,6 +4,7 @@ from .parsers import cleaner
 from .models import APIResult, APIResponse
 from .wikipedia import wikipedia_client
 from .openfda import openfda_client
+from .orchestrator import PersonCOrchestrator, orchestrator
 
 class APIManager:
     """Gestionnaire principal pour Person D et B"""
@@ -52,4 +53,5 @@ class APIManager:
 api_manager = APIManager()
 
 # Exporte ce qui est important
-__all__ = ['api_manager', 'APIResult', 'APIResponse', 'cleaner', 'http_client']
+__all__ = ['api_manager', 'APIResult', 'APIResponse', 'cleaner', 'http_client','orchestrator','clear_cache']
+
