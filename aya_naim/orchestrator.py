@@ -5,11 +5,7 @@ import os
 import sys
 
 class PersonAOrchestrator:
-    """
-    Orchestrateur complet de Person A (Dataset)
-    Version unifiée avec tous les fallbacks intégrés
-    """
-    
+   
     def __init__(self):
         """Initialise l'orchestrateur avec tous les composants"""
         print("🔧 Initialisation Person A (Dataset)...")
