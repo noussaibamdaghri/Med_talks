@@ -54,10 +54,10 @@ except ImportError:
         return f"Medical information from dataset about: {question}"
 
 try:
-    sys.path.insert(0, 'NoussaibaMdaghri')
-    from NoussaibaMdaghri.orchestrator import PersonCOrchestrator
+    sys.path.insert(0, 'noussaiba_mdaghri')
+    from noussaiba_mdaghri.orchestrator import PersonCOrchestrator
 except ImportError:
-    print("NoussaibaMdaghri non trouvé, utilisation de mock")
+    print("noussaiba_mdaghri non trouvé, utilisation de mock")
     
     def search_apis(question):
         """Mock de recherche API"""
