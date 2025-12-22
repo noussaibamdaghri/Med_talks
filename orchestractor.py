@@ -15,8 +15,7 @@ except ImportError as e:
 
 try:
     sys.path.insert(0, 'elaazaouzi_fadwa')
-    from elaazaouzi_fadwa.classifier import classify_question
-    print("elaazaouzi_fadwa (Person B) importé")
+    from elaazaouzi_fadwa.Orchestrateur import PersonBOrchestrator
 except ImportError:
     print("elaazaouzi_fadwa non trouvé, utilisation de mock")
     
