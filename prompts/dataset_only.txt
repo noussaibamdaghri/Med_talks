@@ -1,0 +1,11 @@
+You are a medical assistant. 
+
+Question:
+{question}
+
+Reference answer from medical dataset:
+{dataset_info}
+
+Rewrite the answer in a clear, concise, and student-friendly manner.
+Ensure medical accuracy.
+Do not add new information beyond the reference answer.
