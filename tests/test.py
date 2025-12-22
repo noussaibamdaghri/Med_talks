@@ -1,14 +1,13 @@
 import sys
 import os
 
-# FIXED: Use '..' not '...'
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# Add parent directory to Python path
+sys.path.insert(0, os.path.abspath('.'))
 
 from elaazaouzi_fadwa.classifier import ZeroShotClassifier
 from elaazaouzi_fadwa.confidence import compute_confidence
 from elaazaouzi_fadwa.plans import ActionPlan
 from elaazaouzi_fadwa.planner import PersonBPlanner
-from elaazaouzi_fadwa.validators import validate_input
 
 def test_classifier():
     """Test the zero-shot classifier"""
@@ -16,25 +15,27 @@ def test_classifier():
     
     classifier = ZeroShotClassifier()
     
-    # Test cases
+    # Test cases with expected medical/non-medical
     test_queries = [
-        ("I have chest pain and difficulty breathing", "medical emergency"),
-        ("What are symptoms of flu?", "general medical question"),
+        ("What is myocardial infarction?", "medical"),
+        ("Why does chest pain radiate to the left arm?", "medical"),
+        ("How do I perform CPR step by step?", "medical"),
+        ("Is it bronchitis, pneumonia, or COVID-19?", "medical"),
         ("What's the weather today?", "non-medical")
     ]
     
-    for query, expected_label in test_queries:
+    for query, expected_type in test_queries:
         result = classifier.classify(query)
         print(f"  Query: '{query[:30]}...'")
         print(f"  Result: {result['label']} (score: {result['score']:.3f})")
         
         # Check if medical/non-medical is correctly identified
-        if "medical" in expected_label:
+        if expected_type == "medical":
             assert "medical" in result["label"].lower()
-            print("  ✓ Correctly identified as medical")
+            print(f"  ✓ Correctly identified as medical")
         else:
             assert "non-medical" in result["label"].lower()
-            print("  ✓ Correctly identified as non-medical")
+            print(f"  ✓ Correctly identified as non-medical")
         print()
 
 def test_confidence():
@@ -58,25 +59,43 @@ def test_confidence():
     print()
 
 def test_planner():
-    """Test ActionPlan creation"""
+    """Test that ActionPlans are created correctly"""
     print("📋 Testing Planner...")
     
     planner = PersonBPlanner()
     
-    # Test emergency case
-    emergency_result = {"label": "medical emergency", "score": 0.9}
-    plan = planner.create_plan(emergency_result, "high")
+    # Test medical reasoning case (medium risk)
+    reasoning_result = {"label": "medical reasoning question", "score": 0.8}
+    reasoning_plan = planner.create_plan(reasoning_result, "high")
     
-    assert plan.domain == "medical"
-    assert plan.risk_level == "high"
-    assert plan.needs_external_data == True
-    assert plan.llm_mode == "cautious"
-    print("  ✓ Emergency plan created correctly")
+    assert isinstance(reasoning_plan, ActionPlan)
+    assert reasoning_plan.domain == "medical"
+    assert reasoning_plan.risk_level == "medium"  # reasoning = medium risk
+    assert reasoning_plan.needs_external_data == True
+    assert reasoning_plan.llm_mode == "normal"
+    print("  ✓ Medical reasoning plan created correctly")
+    
+    # Test non-medical case
+    nonmedical_result = {"label": "non-medical question", "score": 0.85}
+    nonmedical_plan = planner.create_plan(nonmedical_result, "high")
+    
+    assert nonmedical_plan.domain == "non-medical"
+    assert nonmedical_plan.risk_level == "low"
+    assert nonmedical_plan.needs_external_data == False
+    assert nonmedical_plan.llm_mode == "normal"
+    print("  ✓ Non-medical plan created correctly")
+    
+    # Test low confidence case
+    low_confidence_result = {"label": "medical reasoning question", "score": 0.3}
+    low_confidence_plan = planner.create_plan(low_confidence_result, "low")
+    
+    assert low_confidence_plan.llm_mode == "refusal"
+    print("  ✓ Low confidence triggers refusal mode")
     
     print()
 
-def run_simple_tests():
-    """Run basic tests"""
+def run_all_tests():
+    """Run all test functions"""
     print("=" * 60)
     print("PERSON B - SIMPLE TEST")
     print("=" * 60)
@@ -87,15 +106,22 @@ def run_simple_tests():
         test_planner()
         
         print("=" * 60)
-        print("✅ BASIC TESTS PASSED!")
+        print("✅ ALL TESTS PASSED!")
         print("=" * 60)
         return True
+    except AssertionError as e:
+        print("=" * 60)
+        print(f"❌ ASSERTION ERROR: {e}")
+        print("=" * 60)
+        return False
     except Exception as e:
         print("=" * 60)
         print(f"❌ TEST FAILED: {e}")
+        import traceback
+        traceback.print_exc()
         print("=" * 60)
         return False
 
 if __name__ == "__main__":
-    success = run_simple_tests()
+    success = run_all_tests()
     sys.exit(0 if success else 1)

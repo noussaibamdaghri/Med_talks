@@ -6,41 +6,35 @@ except ImportError:
     # Fall back to absolute import (when run directly)
     from plans import ActionPlan
     from confidence import compute_confidence
-
-
+    
 class PersonBPlanner:
     """Creates ActionPlans based on classifier results"""
     
     def create_plan(self, classifier_result: dict, confidence_level: str) -> ActionPlan:
         """
         Create an ActionPlan based on classification and confidence.
-        
-        Args:
-            classifier_result: Dictionary with 'label' and 'score'
-            confidence_level: 'high', 'medium', or 'low'
-            
-        Returns:
-            ActionPlan object
         """
         label = classifier_result["label"].lower()
         
         # Determine domain
         if "non-medical" in label:
             domain = "non-medical"
+            risk_level = "low"
+            needs_external_data = False
         else:
             domain = "medical"
-        
-        # Determine risk level
-        if "emergency" in label:
-            risk_level = "high"
-        elif "general medical" in label:
-            risk_level = "medium"
-        else:
-            risk_level = "low"
-        
-        # Determine if external data is needed
-        # Medical questions need data, non-medical don't
-        needs_external_data = domain == "medical"
+            
+            # Determine risk level based on medical category
+            if "reasoning" in label or "multiple choice" in label:
+                # These could involve diagnosis - higher risk
+                risk_level = "medium"
+            elif "stepwise" in label:
+                # Procedures might have risks
+                risk_level = "medium"
+            else:  # definition questions
+                risk_level = "low"
+                
+            needs_external_data = True
         
         # Determine LLM mode
         if confidence_level == "low":
