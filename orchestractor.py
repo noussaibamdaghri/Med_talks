@@ -108,7 +108,7 @@ class Orchestrateur:
             api_info=api_info
         )
         
-        print("\nRéponse générée par Person D")
+        print("\nRéponse générée")
         print("="*60)
         
         return {
