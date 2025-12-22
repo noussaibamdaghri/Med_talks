@@ -69,9 +69,9 @@ class Orchestrateur:
     def __init__(self):
         print("\nInitialisation de l'orchestrateur...")
         
-        self.person_d = LLMHandler()
+        self.aya_sindel = LLMHandler()
         
-        stats = self.person_d.get_stats()
+        stats = self.aya_sindel.get_stats()
         mode = stats['llm']['mode']
         print(f"Mode : {mode.upper()}")
         
@@ -82,28 +82,26 @@ class Orchestrateur:
         print("Orchestrateur initialisé")
     
     def process_question(self, user_question: str) -> Dict[str, Any]:
-        """
-        Pipeline complet : Person B → Person A → Person C → Person D
-        """
+
         print(f"\n{'='*60}")
         print(f"QUESTION UTILISATEUR: {user_question}")
         print(f"{'='*60}")
         
-        print("\n1. PERSON B: Classification de la question...")
+        print("\n1.Classification de la question...")
         question_type = classify_question(user_question)
         print(f"Type détecté: {question_type}")
         
-        print("\n2. PERSON A: Recherche dans le dataset médical...")
+        print("\n2.Recherche dans le dataset médical...")
         dataset_info = search_dataset(user_question)
         print(f"Dataset trouvé: {len(dataset_info)} caractères")
         
-        print("\n3. PERSON C: Recherche via APIs externes...")
+        print("\n3.Recherche via APIs externes...")
         api_info = search_apis(user_question)
         print(f"API info trouvée: {len(api_info)} caractères")
         
-        print(f"\n4. PERSON D: Génération de la réponse ({question_type})...")
+        print(f"\n4.Génération de la réponse ({question_type})...")
         
-        result = self.person_d.process_question(
+        result = self.aya_sindel.process_question(
             question=user_question,
             question_type=question_type,
             dataset_info=dataset_info,
