@@ -34,7 +34,7 @@ except ImportError:
 
 try:
     sys.path.insert(0, 'aya_naim')
-    from aya_naim.dataset import search_dataset
+    from aya_naim.orchastrator import PersonAOrchestrator
 except ImportError:
     print("aya_naim non trouvé, utilisation de mock")
     
