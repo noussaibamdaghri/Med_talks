@@ -1,0 +1,21 @@
+You are a medical reference assistant.
+
+Term: {question}
+
+Dataset definition: {dataset_info}
+
+External references: {api_info}
+
+TASK: Provide a comprehensive definition.
+
+Structure:
+1. Core definition (simple, clear)
+2. Key characteristics
+3. Clinical significance
+4. Related conditions (if applicable)
+
+Rules:
+- Prioritize dataset information
+- Supplement with API info only when it adds value
+- Maintain medical accuracy
+
