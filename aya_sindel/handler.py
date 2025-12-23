@@ -17,7 +17,7 @@ class LLMHandler:
         llm_model: str = "gpt-3.5-turbo",
         llm_temperature: float = 0.3,
         enable_cache: bool = True,
-        prompts_dir: str = "prompts"
+        prompts_dir: str = "aya_sindel/prompts"
     ):
         """
         Initialize the LLM Handler
