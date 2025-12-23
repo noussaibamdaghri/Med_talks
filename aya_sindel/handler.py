@@ -3,7 +3,7 @@ import json
 from typing import Dict, Any, Optional
 from datetime import datetime
 
-from planning import PromptManager, build_medical_prompt
+from planning import PromptManager
 from llm.llm import LLMClient, generate_response
 
 
@@ -14,7 +14,7 @@ class LLMHandler:
     
     def __init__(
         self,
-        llm_model: str = "gpt-3.5-turbo",
+        llm_model: str = "bloom-1.7b",  # Changed default from "gpt-3.5-turbo"
         llm_temperature: float = 0.3,
         enable_cache: bool = True,
         prompts_dir: str = "aya_sindel/prompts"
