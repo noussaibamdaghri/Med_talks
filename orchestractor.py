@@ -81,21 +81,24 @@ class Orchestrateur:
         print("Orchestrateur initialisé")
     
     def process_question(self, user_question: str) -> Dict[str, Any]:
-
+        or1=PersonBOrchestrator()
+        or2=PersonAOrchestrator()
+        or3=PersonCOrchestrator()
+        
         print(f"\n{'='*60}")
         print(f"QUESTION UTILISATEUR: {user_question}")
         print(f"{'='*60}")
         
         print("\n1.Classification de la question...")
-        question_type = PersonBOrchestrator.classify_question(user_question)
+        question_type = or1.classify_question(user_question)
         print(f"Type détecté: {question_type}")
         
         print("\n2.Recherche dans le dataset médical...")
-        dataset_info = PersonAOrchestrator.search_dataset(user_question)
+        dataset_info = or2.search_dataset(user_question)
         print(f"Dataset trouvé: {len(dataset_info)} caractères")
         
         print("\n3.Recherche via APIs externes...")
-        api_info = PersonCOrchestrator.search_apis(user_question)
+        api_info = or3.search_apis(user_question)
         print(f"API info trouvée: {len(api_info)} caractères")
         
         print(f"\n4.Génération de la réponse ({question_type})...")
