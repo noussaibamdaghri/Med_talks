@@ -14,10 +14,10 @@ class PromptManager:
         
         # Map question types to prompt files (based on your prompts)
         self.prompt_mapping = {
-            "medical multiple choice question": "aya_sindel/prompts/qcm.txt",
-            "medical definition question": "aya_sindel/prompts/api_prompt.txt", 
-            "medical reasoning question": "aya_sindel/prompts/api_prompt.txt",
-            "medical stepwise prodcedure question": "aya_sindel/prompts/stepwise.txt"
+            "medical multiple choice question": "qcm.txt",
+            "medical definition question": "api_prompt.txt", 
+            "medical reasoning question": "api_prompt.txt",
+            "medical stepwise prodcedure question": "stepwise.txt"
         }
         
         self._verify_prompt_files()
