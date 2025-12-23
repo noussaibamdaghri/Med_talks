@@ -2,82 +2,155 @@ import os
 import time
 import json
 import hashlib
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from datetime import datetime
-from dotenv import load_dotenv
-load_dotenv()
 
 try:
-    from openai import OpenAI
-    OPENAI_AVAILABLE = True
+    import torch
+    from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+    TRANSFORMERS_AVAILABLE = True
 except ImportError:
-    OPENAI_AVAILABLE = False
-    print("OpenAI package not installed. Use: pip install openai")
+    TRANSFORMERS_AVAILABLE = False
+    print("Transformers package not installed. Use: pip install torch transformers accelerate bitsandbytes")
 
 
-class LLMClient:
-    """
-    Simple LLM client for generating responses
-    - Supports OpenAI GPT models
-    - Has retry logic for reliability
-    - Includes caching to reduce API calls
-    - Works in development mode without API key
-    """
+class BLOOMClient:
     
     def __init__(
         self,
-        api_key: Optional[str] = None,
-        model: str = "gpt-4o-mini",
-        temperature: float = 0.3,
-        max_tokens: int = 1000,
+        model_size: str = "1.7b",
+        device: str = "auto",
+        temperature: float = 0.7,
+        max_tokens: int = 500,
         cache_enabled: bool = True,
-        cache_dir: str = ".llm_cache"
+        cache_dir: str = ".llm_cache",
+        use_quantization: bool = True,
+        download_model: bool = True
     ):
-        """
-        Initialize the LLM client
-        
-        Args:
-            api_key: OpenAI API key (or set OPENAI_API_KEY env var)
-            model: Model to use (gpt-3.5-turbo, gpt-4, etc.)
-            temperature: Creativity level (0.0-1.0)
-            max_tokens: Maximum response length
-            cache_enabled: Cache responses to avoid duplicate calls
-            cache_dir: Directory for cache files
-        """
-        self.model = model
+        self.model_size = model_size
+        self.device = device
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.cache_enabled = cache_enabled
         self.cache_dir = cache_dir
+        self.use_quantization = use_quantization
         
-        # Get API key
-        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
-        self.has_api_key = bool(self.api_key)
+        # Map model sizes to HuggingFace IDs
+        self.model_map = {
+            "560m": "bigscience/bloom-560m",
+            "1.7b": "bigscience/bloom-1b7",
+            "3b": "bigscience/bloom-3b",
+            "7b": "bigscience/bloom-7b1"  # Requires 16GB+ RAM
+        }
         
-        # Initialize client if available
-        if OPENAI_AVAILABLE and self.has_api_key:
-            self.client = OpenAI(api_key=self.api_key)
-            self.mode = "production"
-            print(f" LLM Client initialized (Production Mode)")
-            print(f"   Model: {model}, Cache: {'enabled' if cache_enabled else 'disabled'}")
+        if model_size not in self.model_map:
+            print(f"Warning: Model size {model_size} not recognized. Using 1.7b")
+            model_size = "1.7b"
+        
+        self.model_id = self.model_map[model_size]
+        
+        # Check for transformers availability
+        if not TRANSFORMERS_AVAILABLE:
+            self.mode = "mock"
+            print(" BLOOM Client initialized (Mock Mode)")
+            print("   Transformers not installed. Use: pip install torch transformers accelerate")
         else:
-            self.client = None
-            self.mode = "development"
-            print(f" LLM Client initialized (Development Mode)")
-            print(f"   Mock responses will be generated")
-            if not OPENAI_AVAILABLE:
-                print("   Install: pip install openai")
-            if not self.has_api_key:
-                print("   Set OPENAI_API_KEY environment variable")
+            # Initialize model
+            try:
+                self._initialize_model(download_model)
+                self.mode = "production"
+                print(f" BLOOM Client initialized (Production Mode)")
+                print(f"   Model: BLOOM-{model_size}")
+                print(f"   Device: {self.actual_device}")
+                print(f"   Quantization: {'enabled' if use_quantization else 'disabled'}")
+                print(f"   Cache: {'enabled' if cache_enabled else 'disabled'}")
+            except Exception as e:
+                print(f" Error loading BLOOM model: {e}")
+                print(" Falling back to mock mode")
+                self.mode = "mock"
         
         # Setup cache directory
         if cache_enabled:
             os.makedirs(cache_dir, exist_ok=True)
     
+    def _initialize_model(self, download_model: bool = True):
+        """Initialize the BLOOM model and tokenizer"""
+        print(f"Loading BLOOM-{self.model_size}... This may take a few minutes.")
+        
+        # Determine device
+        if self.device == "auto":
+            if torch.cuda.is_available():
+                self.actual_device = "cuda"
+                print(f"   Using GPU: {torch.cuda.get_device_name(0)}")
+                print(f"   GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
+            else:
+                self.actual_device = "cpu"
+                print(f"   Using CPU (no GPU detected)")
+        else:
+            self.actual_device = self.device
+        
+        # Configure quantization if requested and on CUDA
+        bnb_config = None
+        if self.use_quantization and self.actual_device == "cuda":
+            try:
+                bnb_config = BitsAndBytesConfig(
+                    load_in_4bit=True,
+                    bnb_4bit_compute_dtype=torch.float16,
+                    bnb_4bit_use_double_quant=True,
+                    bnb_4bit_quant_type="nf4"
+                )
+                print("   4-bit quantization enabled")
+            except Exception as e:
+                print(f"   Quantization setup failed: {e}")
+                print("   Continuing without quantization")
+        
+        # Load tokenizer
+        print(f"   Loading tokenizer...")
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            self.model_id,
+            cache_dir="./models" if download_model else None
+        )
+        
+        # Set padding token if not present
+        if self.tokenizer.pad_token is None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
+        
+        # Load model
+        print(f"   Loading model...")
+        self.model = AutoModelForCausalLM.from_pretrained(
+            self.model_id,
+            quantization_config=bnb_config,
+            device_map="auto" if self.actual_device == "cuda" else None,
+            torch_dtype=torch.float16 if self.actual_device == "cuda" else torch.float32,
+            low_cpu_mem_usage=True,
+            cache_dir="./models" if download_model else None,
+            trust_remote_code=True
+        )
+        
+        # Move to CPU if needed
+        if self.actual_device == "cpu":
+            self.model = self.model.to("cpu")
+            self.model = self.model.float()  # Ensure float32 on CPU
+        
+        self.model.eval()  # Set to evaluation mode
+        print(f"   BLOOM-{self.model_size} loaded successfully!")
+    
+    def _format_messages(self, prompt: str) -> str:
+        """
+        Format prompt for BLOOM (BLOOM doesn't have built-in chat template)
+        """
+        # Simple formatting - BLOOM works well with clear instruction prompts
+        formatted_prompt = f"""Instruction: You are a helpful medical AI assistant. Provide accurate, clear, and concise responses.
+
+Question: {prompt}
+
+Response:"""
+        
+        return formatted_prompt
+    
     def _get_cache_key(self, prompt: str) -> str:
         """Generate a unique cache key for the prompt"""
-        # Include model and settings in the key
-        key_content = f"{prompt}_{self.model}_{self.temperature}_{self.max_tokens}"
+        key_content = f"{prompt}_{self.model_size}_{self.temperature}_{self.max_tokens}"
         return hashlib.md5(key_content.encode()).hexdigest()[:16]
     
     def _get_cache_path(self, cache_key: str) -> str:
@@ -120,7 +193,7 @@ class LLMClient:
             cache_data = {
                 'response': response,
                 'timestamp': datetime.now().isoformat(),
-                'model': self.model,
+                'model': f"BLOOM-{self.model_size}",
                 'temperature': self.temperature,
                 'prompt_length': len(response)
             }
@@ -133,12 +206,12 @@ class LLMClient:
         except Exception as e:
             print(f" Cache save error: {e}")
     
-    def generate(self, prompt: str, max_retries: int = 3) -> str:
+    def generate(self, prompt: str, max_retries: int = 2) -> str:
         """
         Generate a response for the given prompt
         
         Args:
-            prompt: The prompt to send to the LLM
+            prompt: The prompt to send to BLOOM
             max_retries: Number of retry attempts on failure
             
         Returns:
@@ -153,204 +226,152 @@ class LLMClient:
         if cached_response:
             return cached_response
         
-        # Development mode (no API key)
-        if self.mode == "development":
+        # Mock mode (transformers not installed)
+        if self.mode == "mock":
             response = self._generate_mock_response(prompt)
             if self.cache_enabled:
                 self._save_to_cache(cache_key, response)
             return response
         
-        # Production mode (with API)
+        # Production mode with BLOOM
+        formatted_prompt = self._format_messages(prompt)
+        
         for attempt in range(max_retries):
             try:
-                print(f" API Call (Attempt {attempt + 1}/{max_retries})...")
+                print(f" Generating with BLOOM-{self.model_size} (Attempt {attempt + 1}/{max_retries})...")
+                start_time = time.time()
                 
-                response = self.client.responses.create(
-                    model=self.model,
-                    input=[
-                        {
-                            "role": "user",
-                            "content": [
-                                {"type": "input_text", "text": prompt}
-                            ]
-                        }
-                    ],
-                    temperature=self.temperature,
-                    max_output_tokens=self.max_tokens
+                # Tokenize
+                inputs = self.tokenizer(
+                    formatted_prompt, 
+                    return_tensors="pt", 
+                    truncation=True, 
+                    max_length=2048 - self.max_tokens
                 )
-
-                # Extract response text
-                if response.output_text:
-                    result = response.output_text.strip()
+                
+                # Move to device
+                if self.actual_device == "cuda":
+                    inputs = {k: v.to("cuda") for k, v in inputs.items()}
+                
+                # Generate
+                with torch.no_grad():
+                    outputs = self.model.generate(
+                        **inputs,
+                        max_new_tokens=self.max_tokens,
+                        temperature=self.temperature,
+                        do_sample=True,
+                        top_p=0.95,
+                        repetition_penalty=1.1,
+                        pad_token_id=self.tokenizer.pad_token_id,
+                        eos_token_id=self.tokenizer.eos_token_id,
+                    )
+                
+                # Decode only the new tokens
+                prompt_length = inputs["input_ids"].shape[1]
+                generated_tokens = outputs[0][prompt_length:]
+                response = self.tokenizer.decode(generated_tokens, skip_special_tokens=True)
+                
+                elapsed = time.time() - start_time
+                print(f"   Generated in {elapsed:.2f}s")
+                
+                # Clean up response
+                response = response.strip()
+                
+                # Save to cache
+                if self.cache_enabled:
+                    self._save_to_cache(cache_key, response)
+                
+                return response
                     
-                    # Save to cache
-                    if self.cache_enabled:
-                        self._save_to_cache(cache_key, result)
-                    
-                    # Log token usage (optional)
-                    if hasattr(response, 'usage'):
-                        tokens = response.usage.total_tokens
-                        print(f"   Tokens used: {tokens}")
-                    
-                    return result
-                else:
-                    raise ValueError("API returned empty response")
-                    
-            except Exception as e:
+            except RuntimeError as e:
                 error_msg = str(e)
                 print(f" Attempt {attempt + 1} failed: {error_msg}")
                 
+                # Check for out-of-memory errors
+                if "out of memory" in error_msg.lower():
+                    print("   Out of memory! Try smaller model or enable quantization")
+                    return "Error: Out of memory. Try using BLOOM-560M or enable quantization."
+                
                 # Last attempt failed
                 if attempt == max_retries - 1:
-                    print(" All retries failed, returning error message")
-                    return f"Error: Failed to generate response after {max_retries} attempts. {error_msg}"
+                    print(" All retries failed, returning fallback")
+                    return self._generate_fallback_response(prompt)
                 
-                # Wait before retrying (exponential backoff)
-                wait_time = 2 ** attempt
+                # Wait before retrying
+                wait_time = 1 * (attempt + 1)
                 print(f"   Waiting {wait_time}s before retry...")
                 time.sleep(wait_time)
+            
+            except Exception as e:
+                error_msg = str(e)
+                print(f" Unexpected error: {error_msg}")
+                return self._generate_fallback_response(prompt)
         
-        return "Error: Failed to generate response"
+        return self._generate_fallback_response(prompt)
     
     def _generate_mock_response(self, prompt: str) -> str:
         """
-        Generate a mock response for development/testing
+        Generate a mock response when transformers not available
         """
         print("\n" + "═" * 60)
-        print(" DEVELOPMENT MODE: Generating Mock Response")
+        print(" MOCK MODE: BLOOM not available")
         print(f" Prompt length: {len(prompt):,} characters")
         print("═" * 60)
         
         # Show prompt preview
-        preview = prompt[:300].replace('\n', ' ')
-        if len(prompt) > 300:
+        preview = prompt[:200].replace('\n', ' ')
+        if len(prompt) > 200:
             preview += "..."
         print(f"\nPrompt preview: {preview}\n")
         print("═" * 60 + "\n")
         
-        # Generate context-aware mock response
-        prompt_lower = prompt.lower()
-        
-        # QCM/Exam questions
-        if "medical multiple choice question" in prompt_lower or "multiple choice" in prompt_lower or "which of the following" in prompt_lower:
-            return """**Mock QCM Response**
+        # Simple mock response
+        return f"""**BLOOM Mock Response (BLOOM-{self.model_size})**
 
- Correct answer: C
+This is a mock response because the BLOOM model is not loaded.
 
- Justification: 
-Option C is correct based on current medical guidelines and pathophysiology. It accurately reflects the most common presentation and mechanism.
+To use the actual BLOOM model:
+1. Install required packages: `pip install torch transformers accelerate bitsandbytes`
+2. Restart the application
 
- Analysis of other options:
-• Option A: Incorrect - This describes a less common variant
-• Option B: Incorrect - While sometimes associated, it's not the primary feature
-• Option D: Incorrect - This is actually a contraindication
+For now, here's what BLOOM would analyze about your query:
 
-*Note: This is a mock response. Set OPENAI_API_KEY for real analysis.*"""
-        
-        # Definition questions
-        elif "medical definition question" in prompt_lower or "what is" in prompt_lower or "define" in prompt_lower:
-            return """**Mock Definition Response**
+**Query Summary:** Your question appears to be about: {preview}
 
-## Overview
-[Medical term] is a [category] condition characterized by [key features].
+**Expected BLOOM Response:**
+BLOOM-{self.model_size} would provide a detailed, multilingual response based on its training data.
 
-## Key Characteristics
-• Primary feature: [Description]
-• Pathophysiology: [Mechanism]
-• Clinical presentation: [Symptoms and signs]
+**Note:** BLOOM is a 100% free, open-source model that runs locally on your machine."""
+    
+    def _generate_fallback_response(self, prompt: str) -> str:
+        """
+        Generate a fallback response when BLOOM fails
+        """
+        return f"""**BLOOM-{self.model_size} Response**
 
-## Diagnosis
-• Diagnostic criteria: [How it's identified]
-• Differential diagnosis: [What to rule out]
+I encountered an issue generating a complete response with BLOOM. Here's what I can provide:
 
-## Management
-• First-line treatment: [Primary approach]
-• Supportive care: [Additional measures]
-• Monitoring: [Follow-up requirements]
+**Analysis of your query:** Your question requires medical knowledge that BLOOM can provide with proper configuration.
 
-*Note: This is a mock response. Set OPENAI_API_KEY for accurate medical definitions.*"""
-        
-        # Stepwise/Procedure questions
-        elif "medical stepwise prodcedure question" in prompt_lower or "procedure" in prompt_lower or "how to" in prompt_lower:
-            return """**Mock Stepwise Response**
+**Troubleshooting steps:**
+1. Ensure you have enough memory (BLOOM-{self.model_size} needs ~{self._get_memory_requirement()} RAM)
+2. Try a smaller model: Use `model_size="560m"` for less memory usage
+3. Enable quantization in constructor: `use_quantization=True`
 
-**Procedure: [Procedure Name]**
+**Quick answer based on available information:**
+Please consult medical guidelines or a healthcare professional for accurate information.
 
-**Pre-procedure:**
-1. Verify patient identification and consent
-2. Prepare necessary equipment and medications
-3. Ensure proper positioning and sterile field
-
-**During procedure:**
-1. Perform initial assessment and baseline measurements
-2. Execute primary steps with monitoring
-3. Document findings and any deviations
-
-**Post-procedure:**
-1. Monitor patient for immediate complications
-2. Provide appropriate aftercare instructions
-3. Schedule follow-up as needed
-
-**Key Points:**
-• Maintain aseptic technique throughout
-• Monitor vital signs continuously
-• Have emergency equipment available
-
-*Note: This is a mock response. Set OPENAI_API_KEY for detailed procedural guidance.*"""
-        
-        # Clinical reasoning
-        elif "medical reasoning question" in prompt_lower or "differential" in prompt_lower or "clinical case" in prompt_lower:
-            return """**Mock Clinical Reasoning Response**
-
-**Case Analysis:**
-
-**Presenting Features:**
-• [Key symptom 1]
-• [Key symptom 2]
-• [Relevant history]
-
-**Differential Diagnosis:**
-1. **Most likely:** [Primary diagnosis] - Best fits presentation
-2. **Consider:** [Secondary possibility] - Less likely but important
-3. **Rule out:** [Critical exclusion] - Must be excluded
-
-**Investigations:**
-• Initial: [Basic tests]
-• Confirmatory: [Definitive tests]
-• Monitoring: [Follow-up tests]
-
-**Management Plan:**
-• Immediate: [Urgent actions]
-• Short-term: [Treatment plan]
-• Long-term: [Follow-up care]
-
-*Note: This is a mock response. Set OPENAI_API_KEY for detailed clinical reasoning.*"""
-        
-        # General/fallback response
-        else:
-            return """**Mock Medical Response**
-
-Based on the provided information, here is a comprehensive answer:
-
-**Summary:**
-[Brief overview of the topic]
-
-**Key Points:**
-• Point 1: [Important information]
-• Point 2: [Additional details]
-• Point 3: [Clinical relevance]
-
-**Recommendations:**
-1. [First recommendation]
-2. [Second recommendation]
-3. [Third recommendation]
-
-**Important Considerations:**
-- Always consult current guidelines
-- Consider individual patient factors
-- Monitor for potential complications
-
-*Note: This response was generated in development mode. For accurate, up-to-date medical information, set the OPENAI_API_KEY environment variable and ensure you have an active internet connection.*"""
+*Model: BLOOM-{self.model_size} (Open-source, free)*"""
+    
+    def _get_memory_requirement(self) -> str:
+        """Get approximate memory requirement for current model"""
+        requirements = {
+            "560m": "2-3 GB",
+            "1.7b": "6-8 GB", 
+            "3b": "10-12 GB",
+            "7b": "16-20 GB"
+        }
+        return requirements.get(self.model_size, "8-10 GB")
     
     def clear_cache(self):
         """Clear all cached responses"""
@@ -368,29 +389,120 @@ Based on the provided information, here is a comprehensive answer:
         if os.path.exists(self.cache_dir):
             cache_files = [f for f in os.listdir(self.cache_dir) if f.endswith('.json')]
         
-        return {
+        stats = {
             "mode": self.mode,
-            "model": self.model,
+            "model": f"BLOOM-{self.model_size}",
+            "model_id": self.model_id,
+            "device": self.actual_device if hasattr(self, 'actual_device') else self.device,
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
             "cache_enabled": self.cache_enabled,
             "cache_size": len(cache_files),
-            "has_api_key": self.has_api_key,
-            "openai_available": OPENAI_AVAILABLE
+            "transformers_available": TRANSFORMERS_AVAILABLE,
+            "quantization_enabled": self.use_quantization,
+            "memory_requirement": self._get_memory_requirement()
         }
+        
+        # Add GPU info if available
+        if TRANSFORMERS_AVAILABLE and torch.cuda.is_available():
+            stats["gpu_name"] = torch.cuda.get_device_name(0)
+            stats["gpu_memory_gb"] = torch.cuda.get_device_properties(0).total_memory / 1e9
+        
+        return stats
+    
+    def batch_generate(self, prompts: List[str], batch_size: int = 2) -> List[str]:
+        """
+        Generate responses for multiple prompts (batched for efficiency)
+        
+        Args:
+            prompts: List of prompts to process
+            batch_size: Number of prompts to process at once
+            
+        Returns:
+            List of responses
+        """
+        if self.mode == "mock":
+            return [self._generate_mock_response(p) for p in prompts]
+        
+        responses = []
+        for i in range(0, len(prompts), batch_size):
+            batch = prompts[i:i + batch_size]
+            print(f"Processing batch {i//batch_size + 1}/{(len(prompts) + batch_size - 1)//batch_size}")
+            
+            for prompt in batch:
+                response = self.generate(prompt)
+                responses.append(response)
+        
+        return responses
+
+
+# Compatibility wrapper for existing code
+class LLMClient(BLOOMClient):
+    """
+    Backward compatibility - maintains the original LLMClient interface
+    but uses BLOOM instead of OpenAI
+    """
+    def __init__(
+        self,
+        api_key: Optional[str] = None,  # Kept for compatibility (ignored)
+        model: str = "bloom-1.7b",  # Now refers to BLOOM model size
+        temperature: float = 0.7,
+        max_tokens: int = 500,
+        cache_enabled: bool = True,
+        cache_dir: str = ".llm_cache",
+        **kwargs
+    ):
+        # Extract BLOOM model size from model string
+        model_size = "1.7b"  # Default
+        if "bloom-" in model.lower():
+            model_size = model.lower().replace("bloom-", "")
+        
+        # Initialize BLOOM client
+        super().__init__(
+            model_size=model_size,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            cache_enabled=cache_enabled,
+            cache_dir=cache_dir,
+            **kwargs
+        )
 
 
 def generate_response(
     prompt: str,
-    api_key: Optional[str] = None,
-    model: str = "gpt-3.5-turbo",
+    model_size: str = "1.7b",
     **kwargs
 ) -> str:
     """
-    Quick function to generate a response
+    Quick function to generate a response with BLOOM
     
     Example:
-        response = generate_response("Explain hypertension", model="gpt-4")
+        response = generate_response("Explain hypertension", model_size="3b")
     """
-    client = LLMClient(api_key=api_key, model=model, **kwargs)
+    client = BLOOMClient(model_size=model_size, **kwargs)
     return client.generate(prompt)
+
+
+# Example usage
+if __name__ == "__main__":
+    # Quick test
+    print("Testing BLOOM Client...")
+    
+    # Test with smallest model
+    client = BLOOMClient(model_size="560m", cache_enabled=True)
+    
+    # Get stats
+    stats = client.get_stats()
+    print("\nClient Stats:")
+    for key, value in stats.items():
+        print(f"  {key}: {value}")
+    
+    # Test generation
+    test_prompt = "What is the treatment for hypertension?"
+    print(f"\nGenerating response for: {test_prompt[:50]}...")
+    
+    response = client.generate(test_prompt)
+    print(f"\nResponse:\n{response}")
+    
+    # Clear cache if needed
+    # client.clear_cache()
