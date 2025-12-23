@@ -15,7 +15,7 @@ except ImportError as e:
 
 try:
     sys.path.insert(0, 'elaazaouzi_fadwa')
-    from elaazaouzi_fadwa.Orchestrateur import PersonBOrchestrator
+    from elaazaouzi_fadwa.orchestrateur import PersonBOrchestrator
 except ImportError:
     print("elaazaouzi_fadwa non trouvé, utilisation de mock")
     
@@ -33,7 +33,7 @@ except ImportError:
 
 try:
     sys.path.insert(0, 'aya_naim')
-    from aya_naim.orchastrator import PersonAOrchestrator
+    from aya_naim.orchestrator import PersonAOrchestrator
 except ImportError:
     print("aya_naim non trouvé, utilisation de mock")
     
