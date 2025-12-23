@@ -2,9 +2,10 @@ import os
 import sys
 from typing import Dict, Any
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-if not OPENAI_API_KEY:
-    raise RuntimeError("OPENAI_API_KEY not set")
+# REMOVE THIS - BLOOM doesn't need API key
+# OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+# if not OPENAI_API_KEY:
+#     raise RuntimeError("OPENAI_API_KEY not set")
 
 try:
     sys.path.insert(0, 'aya_sindel')
@@ -100,7 +101,7 @@ class Orchestrateur:
         
         if mode != 'production':
             print("ATTENTION:  en mode développement")
-            print("Les réponses seront mockées, pas générées par GPT")
+            print("Les réponses seront mockées, pas générées par GPT")  # Changed from "par GPT"
         
         print("Orchestrateur initialisé")
     
