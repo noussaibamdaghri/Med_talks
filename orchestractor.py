@@ -15,8 +15,7 @@ except ImportError as e:
 
 try:
     sys.path.insert(0, 'elaazaouzi_fadwa')
-    from elaazaouzi_fadwa.classifier import classify_question
-    print("elaazaouzi_fadwa (Person B) importé")
+    from elaazaouzi_fadwa.orchestrateur import PersonBOrchestrator
 except ImportError:
     print("elaazaouzi_fadwa non trouvé, utilisation de mock")
     
@@ -34,7 +33,7 @@ except ImportError:
 
 try:
     sys.path.insert(0, 'aya_naim')
-    from aya_naim.orchastrator import PersonAOrchestrator
+    from aya_naim.orchestrator import PersonAOrchestrator
 except ImportError:
     print("aya_naim non trouvé, utilisation de mock")
     
@@ -55,7 +54,7 @@ except ImportError:
 
 try:
     sys.path.insert(0, 'noussaiba_mdaghri')
-    from noussaiba_mdaghri.orchestrator import PersonCOrchestrator
+    from noussaiba_mdaghri.orchestrateur import PersonCOrchestrator
 except ImportError:
     print("noussaiba_mdaghri non trouvé, utilisation de mock")
     

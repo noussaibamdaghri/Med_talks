@@ -17,7 +17,7 @@ class LLMHandler:
         llm_model: str = "gpt-3.5-turbo",
         llm_temperature: float = 0.3,
         enable_cache: bool = True,
-        prompts_dir: str = "prompts"
+        prompts_dir: str = "aya_sindel/prompts"
     ):
         """
         Initialize the LLM Handler
@@ -114,12 +114,12 @@ class LLMHandler:
             response = response[1:-1]
         
         # Add formatting based on type
-        if question_type == "qcm":
+        if question_type == "medical multiple choice question":
             # Ensure clear answer indication for QCM
             if not any(marker in response.lower() for marker in ["correct:", "answer:", "✅", "✓"]):
                 response = "✅ Correct answer:\n" + response
         
-        elif question_type == "stepwise":
+        elif question_type == "medical stepwise prodcedure question":
             # Ensure step formatting
             if not any(marker in response.lower() for marker in ["step", "étape", "1.", "•"]):
                 lines = response.split('\n')
@@ -136,10 +136,10 @@ class LLMHandler:
         Generate a user-friendly error response
         """
         error_templates = {
-            "qcm": f"I apologize, but I encountered an error while analyzing this multiple choice question.\n\nError: {error}\n\nPlease try again or rephrase your question.",
-            "definition": f"I'm unable to provide a definition at the moment due to a technical issue.\n\nError: {error}\n\nYou might try searching medical textbooks or online resources for information about: {question}",
-            "reasoning": f"I'm having difficulty analyzing this clinical case right now.\n\nError: {error}\n\nConsider consulting clinical guidelines or speaking with a healthcare professional.",
-            "stepwise": f"I cannot provide step-by-step instructions at this time due to a system error.\n\nError: {error}\n\nFor procedural guidance, please refer to official medical protocols.",
+            "medical multiple choice question": f"I apologize, but I encountered an error while analyzing this multiple choice question.\n\nError: {error}\n\nPlease try again or rephrase your question.",
+            "medical definition question": f"I'm unable to provide a definition at the moment due to a technical issue.\n\nError: {error}\n\nYou might try searching medical textbooks or online resources for information about: {question}",
+            "medical reasoning question": f"I'm having difficulty analyzing this clinical case right now.\n\nError: {error}\n\nConsider consulting clinical guidelines or speaking with a healthcare professional.",
+            "medical stepwise prodcedure question": f"I cannot provide step-by-step instructions at this time due to a system error.\n\nError: {error}\n\nFor procedural guidance, please refer to official medical protocols.",
             "default": f"I apologize, but I'm unable to process your question at the moment.\n\nTechnical issue: {error}\n\nPlease try again later or consult appropriate medical resources."
         }
         

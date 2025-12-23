@@ -225,7 +225,7 @@ class LLMClient:
         prompt_lower = prompt.lower()
         
         # QCM/Exam questions
-        if "qcm" in prompt_lower or "multiple choice" in prompt_lower or "which of the following" in prompt_lower:
+        if "medical multiple choice question" in prompt_lower or "multiple choice" in prompt_lower or "which of the following" in prompt_lower:
             return """**Mock QCM Response**
 
  Correct answer: C
@@ -241,7 +241,7 @@ Option C is correct based on current medical guidelines and pathophysiology. It 
 *Note: This is a mock response. Set OPENAI_API_KEY for real analysis.*"""
         
         # Definition questions
-        elif "definition" in prompt_lower or "what is" in prompt_lower or "define" in prompt_lower:
+        elif "medical definition question" in prompt_lower or "what is" in prompt_lower or "define" in prompt_lower:
             return """**Mock Definition Response**
 
 ## Overview
@@ -264,7 +264,7 @@ Option C is correct based on current medical guidelines and pathophysiology. It 
 *Note: This is a mock response. Set OPENAI_API_KEY for accurate medical definitions.*"""
         
         # Stepwise/Procedure questions
-        elif "step" in prompt_lower or "procedure" in prompt_lower or "how to" in prompt_lower:
+        elif "medical stepwise prodcedure question" in prompt_lower or "procedure" in prompt_lower or "how to" in prompt_lower:
             return """**Mock Stepwise Response**
 
 **Procedure: [Procedure Name]**
@@ -292,7 +292,7 @@ Option C is correct based on current medical guidelines and pathophysiology. It 
 *Note: This is a mock response. Set OPENAI_API_KEY for detailed procedural guidance.*"""
         
         # Clinical reasoning
-        elif "diagnosis" in prompt_lower or "differential" in prompt_lower or "clinical case" in prompt_lower:
+        elif "medical reasoning question" in prompt_lower or "differential" in prompt_lower or "clinical case" in prompt_lower:
             return """**Mock Clinical Reasoning Response**
 
 **Case Analysis:**
