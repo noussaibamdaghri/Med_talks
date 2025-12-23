@@ -171,7 +171,7 @@ class LLMClient:
                         {
                             "role": "user",
                             "content": [
-                                {"type": "text", "text": prompt}
+                                {"type": "input_text", "text": prompt}
                             ]
                         }
                     ],
