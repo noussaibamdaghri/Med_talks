@@ -181,7 +181,7 @@ class LLMClient:
 
                 # Extract response text
                 if response.choices and response.choices[0].message:
-                    result = response.choices[0].message.content.strip()
+                    result = response.output_text.strip()
                     
                     # Save to cache
                     if self.cache_enabled:
