@@ -165,15 +165,20 @@ class LLMClient:
             try:
                 print(f" API Call (Attempt {attempt + 1}/{max_retries})...")
                 
-                response = self.client.chat.completions.create(
-                    model=self.model,
-                    messages=[
-                        {"role": "user", "content": prompt}
-                    ],
-                    temperature=self.temperature,
-                    max_tokens=self.max_tokens
-                )
-                
+           response = self.client.responses.create(
+    model=self.model,
+    input=[
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": prompt}
+            ]
+        }
+    ],
+    temperature=self.temperature,
+    max_output_tokens=self.max_tokens
+)
+
                 # Extract response text
                 if response.choices and response.choices[0].message:
                     result = response.choices[0].message.content.strip()
