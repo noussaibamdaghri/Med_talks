@@ -1,8 +1,8 @@
-from .classifier import ZeroShotClassifier
-from .confidence import compute_confidence
-from .planner import PersonBPlanner
-from .validators import validate_input
-from .plans import ActionPlan
+from classifier import ZeroShotClassifier
+from confidence import compute_confidence
+from planner import PersonBPlanner
+from validators import validate_input
+from plans import ActionPlan
 
 
 class PersonBOrchestrator:
