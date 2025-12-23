@@ -2,8 +2,9 @@ import os
 import sys
 from typing import Dict, Any
 
-OPENAI_API_KEY = "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"
-os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if not OPENAI_API_KEY:
+    raise RuntimeError("OPENAI_API_KEY not set")
 
 try:
     sys.path.insert(0, 'aya_sindel')
@@ -86,9 +87,10 @@ class Orchestrateur:
         print("\nInitialisation de l'orchestrateur...")
         
         # Create instances of the orchestrators
-        self.or1 = PersonBOrchestrator()
-        self.or2 = PersonAOrchestrator()
-        self.or3 = PersonCOrchestrator()
+        self.or1 = PersonBOrchestrator() if PersonBOrchestrator else MockPersonBOrchestrator()
+        self.or2 = PersonAOrchestrator() if PersonBOrchestrator else MockPersonBOrchestrator()
+        self.or3 = PersonCOrchestrator() if PersonBOrchestrator else MockPersonBOrchestrator()
+
         
         self.aya_sindel = LLMHandler()
         
