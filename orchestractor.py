@@ -87,15 +87,15 @@ class Orchestrateur:
         print(f"{'='*60}")
         
         print("\n1.Classification de la question...")
-        question_type = classify_question(user_question)
+        question_type = PersonBOrchestrator.classify_question(user_question)
         print(f"Type détecté: {question_type}")
         
         print("\n2.Recherche dans le dataset médical...")
-        dataset_info = search_dataset(user_question)
+        dataset_info = PersonAOrchestrator.search_dataset(user_question)
         print(f"Dataset trouvé: {len(dataset_info)} caractères")
         
         print("\n3.Recherche via APIs externes...")
-        api_info = search_apis(user_question)
+        api_info = PersonCOrchestrator.search_apis(user_question)
         print(f"API info trouvée: {len(api_info)} caractères")
         
         print(f"\n4.Génération de la réponse ({question_type})...")
