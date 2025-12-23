@@ -13,23 +13,32 @@ except ImportError as e:
     print("Assure-toi que le dossier 'aya_sindel' existe")
     sys.exit(1)
 
+# Define variables first
+PersonBOrchestrator = None
+PersonAOrchestrator = None
+PersonCOrchestrator = None
+
 try:
     sys.path.insert(0, 'elaazaouzi_fadwa')
     from elaazaouzi_fadwa.orchestrateur import PersonBOrchestrator
 except ImportError:
     print("elaazaouzi_fadwa non trouvé, utilisation de mock")
     
-    def classify_question(question):
-        """Mock de classification"""
-        question_lower = question.lower()
-        if "?" in question and ("or" in question_lower or "which" in question_lower):
-            return "qcm"
-        elif "how to" in question_lower or "step" in question_lower:
-            return "stepwise"
-        elif "what is" in question_lower or "define" in question_lower:
-            return "definition"
-        else:
-            return "definition"
+    # Create a mock class
+    class MockPersonBOrchestrator:
+        def classify_question(self, question):
+            """Mock de classification"""
+            question_lower = question.lower()
+            if "?" in question and ("or" in question_lower or "which" in question_lower):
+                return "qcm"
+            elif "how to" in question_lower or "step" in question_lower:
+                return "stepwise"
+            elif "what is" in question_lower or "define" in question_lower:
+                return "definition"
+            else:
+                return "definition"
+    
+    PersonBOrchestrator = MockPersonBOrchestrator
 
 try:
     sys.path.insert(0, 'aya_naim')
@@ -37,20 +46,24 @@ try:
 except ImportError:
     print("aya_naim non trouvé, utilisation de mock")
     
-    def search_dataset(question):
-        """Mock de recherche dataset"""
-        medical_info = {
-            "diabetes": "Diabetes is a chronic condition with high blood sugar levels.",
-            "hypertension": "Hypertension is high blood pressure >140/90 mmHg.",
-            "asthma": "Asthma is a lung condition causing breathing difficulties.",
-            "cpr": "CPR involves chest compressions and rescue breathing."
-        }
-        
-        for keyword, info in medical_info.items():
-            if keyword in question.lower():
-                return info
-        
-        return f"Medical information from dataset about: {question}"
+    # Create a mock class
+    class MockPersonAOrchestrator:
+        def search_dataset(self, question):
+            """Mock de recherche dataset"""
+            medical_info = {
+                "diabetes": "Diabetes is a chronic condition with high blood sugar levels.",
+                "hypertension": "Hypertension is high blood pressure >140/90 mmHg.",
+                "asthma": "Asthma is a lung condition causing breathing difficulties.",
+                "cpr": "CPR involves chest compressions and rescue breathing."
+            }
+            
+            for keyword, info in medical_info.items():
+                if keyword in question.lower():
+                    return info
+            
+            return f"Medical information from dataset about: {question}"
+    
+    PersonAOrchestrator = MockPersonAOrchestrator
 
 try:
     sys.path.insert(0, 'noussaiba_mdaghri')
@@ -58,15 +71,24 @@ try:
 except ImportError:
     print("noussaiba_mdaghri non trouvé, utilisation de mock")
     
-    def search_apis(question):
-        """Mock de recherche API"""
-        return f"Information from external medical APIs about: {question}"
+    # Create a mock class
+    class MockPersonCOrchestrator:
+        def search_apis(self, question):
+            """Mock de recherche API"""
+            return f"Information from external medical APIs about: {question}"
+    
+    PersonCOrchestrator = MockPersonCOrchestrator
 
 class Orchestrateur:
     """Orchestrateur principal qui connecte toutes les personnes"""
     
     def __init__(self):
         print("\nInitialisation de l'orchestrateur...")
+        
+        # Create instances of the orchestrators
+        self.or1 = PersonBOrchestrator()
+        self.or2 = PersonAOrchestrator()
+        self.or3 = PersonCOrchestrator()
         
         self.aya_sindel = LLMHandler()
         
@@ -81,24 +103,20 @@ class Orchestrateur:
         print("Orchestrateur initialisé")
     
     def process_question(self, user_question: str) -> Dict[str, Any]:
-        or1=PersonBOrchestrator()
-        or2=PersonAOrchestrator()
-        or3=PersonCOrchestrator()
-        
         print(f"\n{'='*60}")
         print(f"QUESTION UTILISATEUR: {user_question}")
         print(f"{'='*60}")
         
         print("\n1.Classification de la question...")
-        question_type = or1.classify_question(user_question)
+        question_type = self.or1.classify_question(user_question)
         print(f"Type détecté: {question_type}")
         
         print("\n2.Recherche dans le dataset médical...")
-        dataset_info = or2.search_dataset(user_question)
+        dataset_info = self.or2.search_dataset(user_question)
         print(f"Dataset trouvé: {len(dataset_info)} caractères")
         
         print("\n3.Recherche via APIs externes...")
-        api_info = or3.search_apis(user_question)
+        api_info = self.or3.search_apis(user_question)
         print(f"API info trouvée: {len(api_info)} caractères")
         
         print(f"\n4.Génération de la réponse ({question_type})...")
