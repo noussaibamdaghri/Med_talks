@@ -54,7 +54,7 @@ except ImportError:
 
 try:
     sys.path.insert(0, 'noussaiba_mdaghri')
-    from noussaiba_mdaghri.orchestrator import PersonCOrchestrator
+    from noussaiba_mdaghri.orchestrateur import PersonCOrchestrator
 except ImportError:
     print("noussaiba_mdaghri non trouvé, utilisation de mock")
     
