@@ -165,22 +165,22 @@ class LLMClient:
             try:
                 print(f" API Call (Attempt {attempt + 1}/{max_retries})...")
                 
-           response = self.client.responses.create(
-    model=self.model,
-    input=[
-        {
-            "role": "user",
-            "content": [
-                {"type": "text", "text": prompt}
-            ]
-        }
-    ],
-    temperature=self.temperature,
-    max_output_tokens=self.max_tokens
-)
+                response = self.client.responses.create(
+                    model=self.model,
+                    input=[
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": prompt}
+                            ]
+                        }
+                    ],
+                    temperature=self.temperature,
+                    max_output_tokens=self.max_tokens
+                )
 
                 # Extract response text
-                if response.choices and response.choices[0].message:
+                if response.output_text:
                     result = response.output_text.strip()
                     
                     # Save to cache
