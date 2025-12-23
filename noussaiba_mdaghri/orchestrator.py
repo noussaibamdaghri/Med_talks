@@ -3,7 +3,7 @@ Orchestrateur pour Person C - Point d'entrée unique pour Person D
 """
 import logging
 from typing import List, Optional
-from api_client import HTTPClient, http_client
+from noussaiba_mdaghri.api_client import HTTPClient, http_client
 from wikipedia import wikipedia_client
 from openfda import openfda_client
 from models import APIResult, APIResponse
