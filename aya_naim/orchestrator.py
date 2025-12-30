@@ -8,7 +8,7 @@ class PersonAOrchestrator:
    
     def __init__(self):
         """Initialise l'orchestrateur avec tous les composants"""
-        print("🔧 Initialisation Person A (Dataset)...")
+        print(" Initialisation Person A (Dataset)...")
         
         # Components
         self.loader = self._create_data_loader()
@@ -18,14 +18,14 @@ class PersonAOrchestrator:
         # Data
         self.dataset = None
         
-        print("✅ Person A initialisé")
+        print(" Person A initialisé")
     
     def _create_data_loader(self):
         """Crée le chargeur de données avec fallback"""
         class DataLoader:
             def load(self):
                 try:
-                    print("   📂 Chargement dataset médical...")
+                    print("    Chargement dataset médical...")
                     # Essaie différentes sources
                     sources = [
                         "hf://datasets/medalpaca/medical_meadow_medical_flashcards/medical_meadow_wikidoc_medical_flashcards.json",
@@ -47,14 +47,14 @@ class PersonAOrchestrator:
                                 # Fichier local
                                 df = pd.read_json(source)
                             
-                            print(f"   ✅ Dataset chargé: {len(df)} enregistrements")
+                            print(f"    Dataset chargé: {len(df)} enregistrements")
                             return df
                             
                         except Exception as e:
                             continue
                     
                     # Fallback: dataset minimal
-                    print("   ⚠️  Utilisation dataset fallback")
+                    print("     Utilisation dataset fallback")
                     return pd.DataFrame({
                         'instruction': [
                             'What is headache?',
@@ -80,7 +80,7 @@ class PersonAOrchestrator:
                     })
                     
                 except Exception as e:
-                    print(f"   ❌ Erreur chargement dataset: {e}")
+                    print(f"    Erreur chargement dataset: {e}")
                     # Dataset vide minimal
                     return pd.DataFrame({'instruction': [], 'input': [], 'output': []})
         
@@ -124,9 +124,9 @@ class PersonAOrchestrator:
                     from sentence_transformers import SentenceTransformer
                     self.model = SentenceTransformer('all-MiniLM-L6-v2')
                     self.use_advanced = True
-                    print("   🤖 Similarité avancée activée")
+                    print("    Similarité avancée activée")
                 except ImportError:
-                    print("   ⚠️  Similarité simple (installe: pip install sentence-transformers)")
+                    print("     Similarité simple (installe: pip install sentence-transformers)")
             
             def find_similar(self, query: str, questions: List[str], top_k: int = 3) -> List[Tuple[str, float]]:
                 """Trouve les questions similaires"""
@@ -176,7 +176,7 @@ class PersonAOrchestrator:
         Returns:
             str: Contexte formaté pour Person D
         """
-        print(f"   🔍 Recherche pour: '{user_query[:50]}...'")
+        print(f"    Recherche pour: '{user_query[:50]}...'")
         
         # Charge les données si nécessaire
         if self.dataset is None:
@@ -209,7 +209,7 @@ class PersonAOrchestrator:
         context_lines = []
         
         if similar_questions:
-            context_lines.append("📚 CONTEXTE MÉDICAL (Person A - Dataset):")
+            context_lines.append(" CONTEXTE MÉDICAL (Person A - Dataset):")
             context_lines.append("=" * 50)
             context_lines.append(f"Requête: {user_query}")
             context_lines.append(f"Mots-clés: {', '.join(keywords)}")
@@ -229,7 +229,7 @@ class PersonAOrchestrator:
                 context_lines.append("")
         
         else:
-            context_lines.append("📚 CONTEXTE MÉDICAL (Person A - Dataset):")
+            context_lines.append(" CONTEXTE MÉDICAL (Person A - Dataset):")
             context_lines.append("=" * 50)
             context_lines.append(f"Aucune correspondance exacte pour: {user_query}")
             context_lines.append("")
@@ -265,7 +265,7 @@ def create_person_a_orchestrator():
 
 # Test rapide si exécuté directement
 if __name__ == "__main__":
-    print("🧪 Test de PersonAOrchestrator")
+    print(" Test de PersonAOrchestrator")
     print("=" * 60)
     
     orchestrator = PersonAOrchestrator()
@@ -277,11 +277,11 @@ if __name__ == "__main__":
     ]
     
     for query in test_queries:
-        print(f"\n🔍 Test: {query}")
+        print(f"\n Test: {query}")
         context = orchestrator.search_dataset(query)
-        print(f"📝 Contexte généré ({len(context)} caractères):")
+        print(f" Contexte généré ({len(context)} caractères):")
         print(context[:200] + "..." if len(context) > 200 else context)
         print("-" * 40)
     
     stats = orchestrator.get_stats()
-    print(f"\n📊 Statistiques: {stats}")
+    print(f"\n Statistiques: {stats}")
