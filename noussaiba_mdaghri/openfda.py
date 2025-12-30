@@ -33,7 +33,7 @@ class OpenFDAClient:
             client.search_drugs("aspirin") → [Infos sur l'aspirine]
         """
         try:
-            logger.info(f"💊 OpenFDA search: '{drug_name}'")
+            logger.info(f" OpenFDA search: '{drug_name}'")
             
             # Construction de la requête de recherche
             search_query = f'generic_name:"{drug_name}" OR brand_name:"{drug_name}" OR openfda.substance_name:"{drug_name}"'
@@ -52,13 +52,13 @@ class OpenFDAClient:
             
             # Vérifie s'il y a des résultats
             if 'results' not in data:
-                logger.warning(f"⚠️  Aucun médicament trouvé pour: {drug_name}")
+                logger.warning(f"  Aucun médicament trouvé pour: {drug_name}")
                 return []
             
             results = []
             drugs = data['results']
             
-            logger.info(f"💊 OpenFDA a trouvé {len(drugs)} médicaments")
+            logger.info(f" OpenFDA a trouvé {len(drugs)} médicaments")
             
             # Parse chaque médicament
             for drug in drugs[:max_results]:
@@ -70,7 +70,7 @@ class OpenFDAClient:
             return results
             
         except Exception as e:
-            logger.error(f"❌ Erreur OpenFDA drugs: {str(e)}")
+            logger.error(f" Erreur OpenFDA drugs: {str(e)}")
             return []
     
     def search_adverse_effects(self, drug_name: str, max_results: int = 3) -> List[APIResult]:
@@ -85,7 +85,7 @@ class OpenFDAClient:
             Liste d'effets secondaires
         """
         try:
-            logger.info(f"⚠️  Recherche effets secondaires pour: '{drug_name}'")
+            logger.info(f"  Recherche effets secondaires pour: '{drug_name}'")
             
             params = {
                 'search': f'patient.drug.medicinalproduct:"{drug_name}"',
@@ -107,11 +107,11 @@ class OpenFDAClient:
                 if result:
                     results.append(result)
             
-            logger.info(f"⚠️  Trouvé {len(results)} rapports d'effets secondaires")
+            logger.info(f"  Trouvé {len(results)} rapports d'effets secondaires")
             return results
             
         except Exception as e:
-            logger.error(f"❌ Erreur OpenFDA adverse effects: {str(e)}")
+            logger.error(f" Erreur OpenFDA adverse effects: {str(e)}")
             return []
     
     def _parse_drug(self, drug_data: Dict[str, Any], query: str) -> Optional[APIResult]:
@@ -143,16 +143,16 @@ class OpenFDAClient:
             content_parts = []
             
             if clean_description:
-                content_parts.append(f"📋 Description: {clean_description}")
+                content_parts.append(f" Description: {clean_description}")
             
             if clean_indications:
-                content_parts.append(f"🎯 Indications: {clean_indications}")
+                content_parts.append(f" Indications: {clean_indications}")
             
             if clean_dosage:
-                content_parts.append(f"💊 Dosage: {clean_dosage}")
+                content_parts.append(f" Dosage: {clean_dosage}")
             
             if clean_warnings:
-                content_parts.append(f"⚠️  Avertissements: {clean_warnings}")
+                content_parts.append(f"  Avertissements: {clean_warnings}")
             
             content = "\n\n".join(content_parts)
             
@@ -181,7 +181,7 @@ class OpenFDAClient:
         )
         
       except Exception as e:
-         logger.error(f"❌ Erreur parsing médicament OpenFDA: {str(e)}")
+         logger.error(f" Erreur parsing médicament OpenFDA: {str(e)}")
          return None
     
     def _parse_adverse_event(self, event_data: Dict[str, Any], drug_name: str) -> Optional[APIResult]:
@@ -215,20 +215,20 @@ class OpenFDAClient:
             
             # Construit le contenu
             content_parts = [
-                f"💊 Médicament: {drug_name}",
-                f"⚠️  Réactions rapportées:",
+                f" Médicament: {drug_name}",
+                f"  Réactions rapportées:",
                 "\n".join([f"   • {r}" for r in reaction_list]),
-                f"📊 Gravité: {seriousness_fr}"
+                f" Gravité: {seriousness_fr}"
             ]
             
             # Infos patient si disponibles
             if 'patientonsetage' in patient:
-                content_parts.append(f"👤 Âge patient: {patient['patientonsetage']} ans")
+                content_parts.append(f" Âge patient: {patient['patientonsetage']} ans")
             
             if 'patientsex' in patient:
                 sex_map = {'1': 'Homme', '2': 'Femme', '0': 'Non spécifié'}
                 sex = sex_map.get(str(patient['patientsex']), 'Non spécifié')
-                content_parts.append(f"⚤ Sexe: {sex}")
+                content_parts.append(f" Sexe: {sex}")
             
             content = "\n".join(content_parts)
             
@@ -246,8 +246,9 @@ class OpenFDAClient:
             )
             
         except Exception as e:
-            logger.error(f"❌ Erreur parsing effet secondaire: {str(e)}")
+            logger.error(f" Erreur parsing effet secondaire: {str(e)}")
             return None
 
 # Instance globale
 openfda_client = OpenFDAClient()
+
