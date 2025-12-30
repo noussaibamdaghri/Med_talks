@@ -25,7 +25,7 @@ class PersonCOrchestrator:
         self.wikipedia = wikipedia_client
         self.openfda = openfda_client
         
-        logger.info("🚀 PersonCOrchestrator initialisé")
+        logger.info(" PersonCOrchestrator initialisé")
     
     def search_apis(self, question: str, max_results: int = 3) -> APIResponse:
         """
@@ -38,12 +38,12 @@ class PersonCOrchestrator:
         Returns:
             APIResponse avec tous les résultats formatés
         """
-        logger.info(f"🔍 Recherche orchestrée pour: '{question}'")
+        logger.info(f" Recherche orchestrée pour: '{question}'")
         
         response = APIResponse(question)
         
         # 1. Toujours chercher sur Wikipedia (définitions générales)
-        logger.info("📚 Interrogation Wikipedia...")
+        logger.info(" Interrogation Wikipedia...")
         try:
             wiki_results = self.wikipedia.search(question, max_results=max_results)
             for result in wiki_results:
@@ -51,12 +51,12 @@ class PersonCOrchestrator:
             logger.info(f"  Wikipedia: {len(wiki_results)} résultats")
         except Exception as e:
             error_msg = f"Wikipedia error: {str(e)}"
-            logger.error(f"  ❌ {error_msg}")
+            logger.error(f"   {error_msg}")
             response.add_error(error_msg)
         
         # 2. Chercher sur OpenFDA si question médicale
         if self._looks_medical(question):
-            logger.info("💊 Interrogation OpenFDA (question médicale)...")
+            logger.info(" Interrogation OpenFDA (question médicale)...")
             try:
                 # Médicaments
                 drug_results = self.openfda.search_drugs(question, max_results=max_results)
@@ -72,10 +72,10 @@ class PersonCOrchestrator:
                 logger.info(f"  OpenFDA: {len(drug_results) + len(adverse_results)} résultats")
             except Exception as e:
                 error_msg = f"OpenFDA error: {str(e)}"
-                logger.error(f"  ❌ {error_msg}")
+                logger.error(f"   {error_msg}")
                 response.add_error(error_msg)
         
-        logger.info(f"✅ Recherche terminée: {len(response.results)} résultats totaux")
+        logger.info(f" Recherche terminée: {len(response.results)} résultats totaux")
         return response
     
     def search_specific(self, question: str, source: str = "all", max_results: int = 3) -> APIResponse:
@@ -90,7 +90,7 @@ class PersonCOrchestrator:
         Returns:
             APIResponse avec résultats
         """
-        logger.info(f"🔍 Recherche spécifique [{source}] pour: '{question}'")
+        logger.info(f" Recherche spécifique [{source}] pour: '{question}'")
         
         response = APIResponse(question)
         
