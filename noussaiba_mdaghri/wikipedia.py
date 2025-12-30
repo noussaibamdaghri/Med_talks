@@ -33,7 +33,7 @@ class WikipediaClient:
             client.search("aspirine") → [Page sur l'aspirine]
         """
         try:
-            logger.info(f"🔍 Wikipedia search: '{query}'")
+            logger.info(f" Wikipedia search: '{query}'")
             
             # Paramètres de l'API Wikipedia
             params = {
@@ -52,13 +52,13 @@ class WikipediaClient:
             
             # Vérifie s'il y a des résultats
             if 'query' not in data or 'search' not in data['query']:
-                logger.warning(f"⚠️  Aucun résultat Wikipedia pour: {query}")
+                logger.warning(f"  Aucun résultat Wikipedia pour: {query}")
                 return []
             
             pages = []
             search_results = data['query']['search']
             
-            logger.info(f"📚 Wikipedia a trouvé {len(search_results)} résultats")
+            logger.info(f" Wikipedia a trouvé {len(search_results)} résultats")
             
             # Parse chaque résultat
             for item in search_results:
@@ -70,7 +70,7 @@ class WikipediaClient:
             return pages
             
         except Exception as e:
-            logger.error(f"❌ Erreur Wikipedia search: {str(e)}")
+            logger.error(f" Erreur Wikipedia search: {str(e)}")
             return []
     
     def get_page_content(self, page_id: int) -> Optional[APIResult]:
@@ -108,7 +108,7 @@ class WikipediaClient:
             return self._parse_full_page(page_data)
             
         except Exception as e:
-            logger.error(f"❌ Erreur get_page_content: {str(e)}")
+            logger.error(f" Erreur get_page_content: {str(e)}")
             return None
     
     # Dans wikipedia.py, change _parse_search_result :
@@ -140,7 +140,7 @@ class WikipediaClient:
          )
         
      except Exception as e:
-         logger.error(f"❌ Erreur parsing Wikipedia: {str(e)}")
+         logger.error(f" Erreur parsing Wikipedia: {str(e)}")
          return None
     
     def _parse_full_page(self, page_data: Dict[str, Any]) -> Optional[APIResult]:
@@ -173,8 +173,9 @@ class WikipediaClient:
             )
             
         except Exception as e:
-            logger.error(f"❌ Erreur parsing page Wikipedia: {str(e)}")
+            logger.error(f" Erreur parsing page Wikipedia: {str(e)}")
             return None
 
 # Instance globale utilisée partout
 wikipedia_client = WikipediaClient()
+
