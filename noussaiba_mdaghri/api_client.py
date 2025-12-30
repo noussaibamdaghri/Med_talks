@@ -81,7 +81,7 @@ class HTTPClient:
             if headers:
                 all_headers.update(headers)
             
-            logger.info(f"🌐 GET {url}")
+            logger.info(f" GET {url}")
             if params:
                 logger.info(f"   Paramètres: {params}")
             
@@ -101,20 +101,20 @@ class HTTPClient:
             
             # Log si c'était du cache ou pas
             if getattr(response, 'from_cache', False):
-                logger.info(f"✅ Cache hit ({elapsed:.2f}s)")
+                logger.info(f" Cache hit ({elapsed:.2f}s)")
             else:
-                logger.info(f"🌐 API call ({elapsed:.2f}s) - Status: {response.status_code}")
+                logger.info(f" API call ({elapsed:.2f}s) - Status: {response.status_code}")
             
             # Essaie de parser en JSON
             try:
                 return response.json()
             except ValueError:
                 # Si pas du JSON, retourne le texte
-                logger.warning(f"⚠️  Réponse non-JSON de {url}")
+                logger.warning(f"  Réponse non-JSON de {url}")
                 return {"text": response.text}
                 
         except RequestException as e:
-            logger.error(f"❌ Erreur HTTP pour {url}: {str(e)}")
+            logger.error(f" Erreur HTTP pour {url}: {str(e)}")
             raise
     
     def clear_cache(self):
@@ -124,3 +124,4 @@ class HTTPClient:
 
 # Instance globale utilisée dans tout ton module
 http_client = HTTPClient()
+
