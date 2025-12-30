@@ -28,10 +28,10 @@ class LLMClient:
     
     def __init__(
         self,
-        api_key: Optional[str] = None,  # Kept for compatibility (ignored)
-        model: str = "bloom-1.7b",  # Changed from "gpt-4o-mini"
+        api_key: Optional[str] = None,  
+        model: str = "bloom-1.7b",  
         temperature: float = 0.3,
-        max_tokens: int = 500,  # Reduced for BLOOM
+        max_tokens: int = 500, 
         cache_enabled: bool = True,
         cache_dir: str = ".llm_cache"
     ):
@@ -56,7 +56,7 @@ class LLMClient:
         if model.startswith("bloom-"):
             self.bloom_size = model.replace("bloom-", "")
         else:
-            self.bloom_size = "1.7b"  # Default
+            self.bloom_size = "1.7b"  
         
         # Map model sizes to HuggingFace IDs
         self.model_map = {
