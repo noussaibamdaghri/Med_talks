@@ -65,7 +65,7 @@ class DataCleaner:
             return clean_text
             
         except Exception as e:
-            logger.error(f"❌ Erreur nettoyage HTML: {str(e)}")
+            logger.error(f" Erreur nettoyage HTML: {str(e)}")
             return raw_html[:max_length] if raw_html else ""
     
     @staticmethod
@@ -110,3 +110,4 @@ class DataCleaner:
 
 # Instance globale
 cleaner = DataCleaner()
+
